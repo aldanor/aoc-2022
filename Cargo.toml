@@ -1,0 +1,34 @@
+[package]
+name = "aoc-2022"
+version = "0.1.0"
+description = "Advent of Code 2022"
+authors = ["Ivan Smirnov <rust@ivan.smirnov.ie>"]
+edition = "2021"
+default-run = "runner"
+publish = false
+
+[dependencies]
+arrayvec = "0.7"
+memchr = "2.5"
+core_simd = { git = "https://github.com/rust-lang/portable-simd.git" }
+structopt = "0.3"
+eyre = "0.6"
+ahash = "0.8"
+num-integer = "0.1"
+rayon = "1.6"
+petgraph = "0.6"
+
+[profile.release]
+#codegen-units = 1
+lto = "fat"
+panic = "abort"
+
+[lib]
+name = "aoc"
+path = "src/lib.rs"
+doctest = false
+
+[[bin]]
+name = "runner"
+path = "src/runner.rs"
+test = false
