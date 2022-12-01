@@ -8,5 +8,6 @@ each part of each problem - there are no input 'generators' and so each input is
 ```
 day       part 1    part 2    
 ------------------------------
+day 01    6.52 μs   6.51 μs   
 ------------------------------
 ```
