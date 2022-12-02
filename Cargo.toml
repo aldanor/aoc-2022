@@ -9,6 +9,7 @@ publish = false
 
 [dependencies]
 arrayvec = "0.7"
+bytemuck = "1.12"
 memchr = "2.5"
 core_simd = { git = "https://github.com/rust-lang/portable-simd.git" }
 structopt = "0.3"
