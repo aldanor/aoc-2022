@@ -1,36 +1,46 @@
-use std::iter;
-
 use crate::utils::*;
 
 pub fn input() -> &'static [u8] {
     include_bytes!("input.txt")
 }
 
-fn parse_line(s: &mut &[u8]) -> [u8; 4] {
-    let mut out = [0; 4];
-    for i in 0..4 {
-        let c = [s.get_at(0).saturating_sub(b'0' - 1), s.get_at(1).saturating_sub(b'0' - 1)];
-        if c[1] != 0 {
-            out[i] = (c[0] << 4) | c[1];
-            *s = s.advance(3);
+fn parse_range(s: &mut &[u8]) -> [i16; 2] {
+    let x = [s.get_at(0), s.get_at(1)];
+    if x[1] & 0b10000 != 0 {
+        let y = [s.get_at(3), s.get_at(4)];
+        *s = s.advance(6);
+        [i16::from_be_bytes(x), i16::from_be_bytes(y)]
+    } else {
+        let y = [s.get_at(2), s.get_at(3)];
+        if y[1] & 0b10000 != 0 {
+            *s = s.advance(5);
+            [x[0] as _, i16::from_be_bytes(y)]
         } else {
-            out[i] = c[0];
-            *s = s.advance(2);
+            *s = s.advance(4);
+            [x[0] as _, y[0] as _]
         }
     }
-    out
 }
 
-fn iter_lines(mut s: &[u8]) -> impl Iterator<Item = [u8; 4]> + '_ {
-    iter::from_fn(move || (s.len() > 1).then(|| parse_line(&mut s)))
+pub fn part1(mut s: &[u8]) -> u16 {
+    let mut total = 0;
+    while s.len() > 1 {
+        let x = parse_range(&mut s);
+        let y = parse_range(&mut s);
+        let d = [i32::from(x[0] - y[0]), i32::from(x[1] - y[1])];
+        total += u16::from(d[0] * d[1] <= 0);
+    }
+    total
 }
 
-pub fn part1(s: &[u8]) -> u16 {
-    iter_lines(s).map(|r| ((r[0].cmp(&r[2]) as i8) * (r[1].cmp(&r[3]) as i8) <= 0) as u16).sum()
-}
-
-pub fn part2(s: &[u8]) -> u16 {
-    iter_lines(s).map(|r| (r[0] <= r[3] && r[2] <= r[1]) as u16).sum()
+pub fn part2(mut s: &[u8]) -> u16 {
+    let mut total = 0;
+    while s.len() > 1 {
+        let x = parse_range(&mut s);
+        let y = parse_range(&mut s);
+        total += u16::from(x[0] <= y[1] && y[0] <= x[1]);
+    }
+    total
 }
 
 #[test]
