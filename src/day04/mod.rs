@@ -6,29 +6,23 @@ pub fn input() -> &'static [u8] {
     include_bytes!("input.txt")
 }
 
-fn parse_line(s: &[u8]) -> (usize, [u8; 4]) {
+fn parse_line(s: &mut &[u8]) -> [u8; 4] {
     let mut out = [0; 4];
-    let mut pos = 0;
     for i in 0..4 {
-        (out[i], pos) = (s.get_at(pos) - b'0', pos + 1);
-        if s.get_at(pos) >= b'0' {
-            (out[i], pos) = (out[i] * 10 + s.get_at(pos) - b'0', pos + 1);
+        let c = [s.get_at(0).saturating_sub(b'0' - 1), s.get_at(1).saturating_sub(b'0' - 1)];
+        if c[1] != 0 {
+            out[i] = (c[0] << 4) | c[1];
+            *s = s.advance(3);
+        } else {
+            out[i] = c[0];
+            *s = s.advance(2);
         }
-        pos += 1;
     }
-    (pos, out)
+    out
 }
 
 fn iter_lines(mut s: &[u8]) -> impl Iterator<Item = [u8; 4]> + '_ {
-    iter::from_fn(move || {
-        if s.len() > 1 {
-            let (n, r) = parse_line(s);
-            s = s.advance(n);
-            Some(r)
-        } else {
-            None
-        }
-    })
+    iter::from_fn(move || (s.len() > 1).then(|| parse_line(&mut s)))
 }
 
 pub fn part1(s: &[u8]) -> u16 {
