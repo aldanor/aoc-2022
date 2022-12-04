@@ -1,4 +1,5 @@
 use std::iter;
+use std::ptr;
 
 use crate::utils::*;
 
@@ -6,12 +7,35 @@ pub fn input() -> &'static [u8] {
     include_bytes!("input.txt")
 }
 
+fn parse_4digit(a: [u8; 4]) -> u32 {
+    let mut v: u32 = bytemuck::cast(a);
+    v -= 0x30303030;
+    v = (v * 10) + (v >> 8);
+    (v & 0xff) * 100 + ((v & 0xff0000) >> 16)
+}
+
+fn parse_number(s: &mut &[u8]) -> u32 {
+    let mut v = unsafe { parse_4digit(ptr::read_unaligned(s.as_ptr().cast::<[u8; 4]>())) };
+    *s = s.advance(4);
+    loop {
+        let d = s.get_at(0);
+        if d & 0b10000 != 0 {
+            v = v * 10 + u32::from(d - b'0');
+            *s = s.advance(1);
+        } else {
+            break;
+        }
+    }
+    *s = s.advance(1);
+    v
+}
+
 pub fn stacks(mut s: &[u8]) -> impl Iterator<Item = u32> + '_ {
     iter::from_fn(move || {
         if s.len() > 1 {
             let mut total = 0;
             loop {
-                total += parse_int_fast::<u32, 1, 5>(&mut s);
+                total += parse_number(&mut s);
                 if s.get_at(0) == b'\n' {
                     s = s.advance(1);
                     return Some(total);
