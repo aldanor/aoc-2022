@@ -41,20 +41,29 @@ fn parse_stacks(s: &mut &[u8]) -> Stacks {
     stacks
 }
 
-fn parse_moves(mut s: &[u8]) -> Vec<(usize, usize, usize)> {
-    let mut moves = Vec::with_capacity(1024);
+#[derive(Debug, Clone, Copy, Default)]
+struct Move {
+    n: u8,
+    from: u8,
+    to: u8,
+}
+
+fn parse_moves(mut s: &[u8]) -> Vec<Move> {
+    let mut moves = Vec::with_capacity(512);
     while s.len() > 1 {
-        s = s.advance(5);
-        let mut n = s.get_at(0) - b'0';
-        if (b'0'..=b'9').contains(&s.get_at(1)) {
-            n = n * 10 + s.get_at(1) - b'0';
+        let mut m = Move::default();
+        if s.get_at(18) == b'\n' {
+            m.n = s.get_at(5) - 0x30;
+            m.from = s.get_at(12) - 0x31;
+            m.to = s.get_at(17) - 0x31;
+        } else {
+            m.n = 10 * (s.get_at(5) - 0x30) + s.get_at(6) - 0x30;
+            m.from = s.get_at(13) - 0x31;
+            m.to = s.get_at(18) - 0x31;
             s = s.advance(1);
         }
-        let n = usize::from(n);
-        let from = usize::from(s.get_at(7) - b'0' - 1);
-        let to = usize::from(s.get_at(12) - b'0' - 1);
-        s = s.advance(14);
-        moves.push((n, from, to));
+        moves.push(m);
+        s = s.advance(19);
     }
     moves
 }
@@ -81,7 +90,8 @@ fn solve(mut s: &[u8], pos_fn: impl Fn(usize, usize) -> usize) -> String {
         tops.push(ArrayVec::new());
         tops[i].push((0, i));
     }
-    for &(n, from, to) in moves.iter().rev() {
+    for &Move { n, from, to } in moves.iter().rev() {
+        let (n, from, to) = (n as usize, from as usize, to as usize);
         let n_from = tops[from].len();
         for i in 0..n_from {
             tops[from][i].0 += n;
