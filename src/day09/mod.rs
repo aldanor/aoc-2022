@@ -2,8 +2,7 @@ use crate::utils::*;
 
 use std::iter;
 
-use ahash::HashSetExt;
-use rustc_hash::FxHashSet;
+use bitvec::array::BitArray;
 
 type X = i16;
 
@@ -72,12 +71,21 @@ fn build_map() -> [[(usize, usize, (X, X)); 9]; 9] {
     out
 }
 
+#[inline]
+fn cantor((x, y): (X, X)) -> usize {
+    let x = (x.unsigned_abs() << 1) | x.is_negative() as u16;
+    let y = (y.unsigned_abs() << 1) | y.is_negative() as u16;
+    let s = (x + y) as usize;
+    (s * (s + 1)) / 2 + y as usize
+}
+
 pub fn part1(s: &[u8]) -> usize {
     let map = build_map();
     let mut ht_id = 0_usize;
     let mut tail: (X, X) = (0, 0);
-    let mut set = FxHashSet::with_capacity(1 << 16);
-    set.insert(tail);
+    let mut spiral: BitArray<[usize; 1 << 13]> = BitArray::ZERO;
+    let mut count = 1;
+    spiral.set(0, true);
     for (dh_id, n) in parse_inputs(s, [1_usize, 3, 5, 7]) {
         for _ in 0..n {
             let (ht_id_new, dir, dt) = map[dh_id][ht_id];
@@ -86,18 +94,21 @@ pub fn part1(s: &[u8]) -> usize {
                 continue;
             }
             tail = (tail.0 + dt.0, tail.1 + dt.1);
-            set.insert(tail);
+            let mut r = unsafe { spiral.get_unchecked_mut(cantor(tail)) };
+            count += !*r as usize;
+            *r = true;
         }
     }
-    set.len()
+    count
 }
 
 pub fn part2(s: &[u8]) -> usize {
     let map = build_map();
     let mut ht_ids = [0_usize; 9];
     let mut tail: (X, X) = (0, 0);
-    let mut set = FxHashSet::with_capacity(1 << 16);
-    set.insert(tail);
+    let mut spiral = vec![false; 1 << 16];
+    let mut count = 1;
+    spiral[0] = true;
     for (dh_id, n) in parse_inputs(s, [1_usize, 3, 5, 7]) {
         'outer: for _ in 0..n {
             let mut dir = dh_id;
@@ -109,10 +120,12 @@ pub fn part2(s: &[u8]) -> usize {
                 }
             }
             tail = (tail.0 + dt.0, tail.1 + dt.1);
-            set.insert(tail);
+            let c = cantor(tail);
+            count += !spiral[c] as usize;
+            spiral[c] = true;
         }
     }
-    set.len()
+    count
 }
 
 #[test]
